@@ -7233,6 +7233,7 @@
             if (isLembur) {
               statusHadir = 'Lembur Selesai';
               lemburJam = durasiJam > 0 ? durasiJam : 1.0;
+              durasiJam = 0; // Durasi hanya untuk jam kerja reguler saja, lembur masuk ke jam lembur
               tunjanganRp = Math.round(lemburJam * Number(st.tarifLemburPerJam || 25000));
             } else {
               statusHadir = 'Pulang Kerja';
@@ -7899,8 +7900,15 @@
           rec.jamPulang = jam; 
           rec.tipeAbsen = (tipe === 'Selesai Lembur') ? 'Selesai Lembur' : 'Pulang';
           rec.shift = shift;
+          rec.status = (tipe === 'Selesai Lembur' || shift === 'Lembur') ? 'Lembur Selesai' : (rec.status === 'Terlambat' ? 'Terlambat' : 'Pulang Kerja');
+          if (r.Status_Kehadiran && r.Status_Kehadiran !== 'Sedang Lembur') rec.status = String(r.Status_Kehadiran);
           rec.durasiJam = toNum(r.Durasi_Kerja_Jam); 
           rec.lemburJam = toNum(r.Jam_Lembur) || (shift === 'Lembur' ? toNum(r.Durasi_Kerja_Jam) : 0); 
+          // Jika shift adalah Lembur, durasi jam kerja reguler tetap 0 dan perhitungan masuk ke jam lembur saja
+          if (shift === 'Lembur' || tipe === 'Selesai Lembur') {
+            if (rec.lemburJam === 0 && rec.durasiJam > 0) rec.lemburJam = rec.durasiJam;
+            rec.durasiJam = 0;
+          }
           rec.tunjanganRp = toNum(r.Estimasi_Tunjangan_Rp);
           if (fotoSelfiePresensi && !rec.fotoSelfie) rec.fotoSelfie = fotoSelfiePresensi;
         }
@@ -11764,10 +11772,32 @@ const appState = {
       if (!list) return;
       list.innerHTML = '';
 
-      let feedData = [...todayRecords()];
+      const today = todayIso();
+      const yesterday = typeof getYesterdayWitaIso === 'function' ? getYesterdayWitaIso() : '';
+
+      // Tampilkan aktivitas hari ini + aktivitas lembur/malam lintas tengah malam dari kemarin
+      let feedData = (appState.attendanceToday || []).filter(item => {
+        if (item.tanggal === today) return true;
+        if (item.tanggal === yesterday) {
+          if (item.shift === 'Lembur' || item.shift === 'Malam' || String(item.tipeAbsen || '').includes('Lembur')) {
+            return item.jamMasuk !== '-' || item.jamPulang !== '-';
+          }
+        }
+        return false;
+      });
+
       if (appState.currentUser && appState.currentUser.role === 'Karyawan') {
         feedData = feedData.filter(item => item.idUser === appState.currentUser.idUser);
       }
+
+      // Urutkan aktivitas paling baru di atas
+      feedData.sort((a, b) => {
+        const timeA = (a.jamPulang && a.jamPulang !== '-') ? a.jamPulang : (a.jamMasuk || '00:00');
+        const timeB = (b.jamPulang && b.jamPulang !== '-') ? b.jamPulang : (b.jamMasuk || '00:00');
+        const dateA = a.tanggal || '';
+        const dateB = b.tanggal || '';
+        return (dateB + ' ' + timeB).localeCompare(dateA + ' ' + timeA);
+      });
 
       if (feedData.length === 0) {
         list.innerHTML = `<div class="p-3 text-center text-xs text-slate-400 bg-slate-50 rounded-xl">Belum ada riwayat aktivitas absen hari ini.</div>`;
@@ -11779,12 +11809,18 @@ const appState = {
       feedData.slice(0, 5).forEach(item => {
         const div = document.createElement('div');
         div.className = 'flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100';
+        const actTime = (item.jamPulang && item.jamPulang !== '-') ? item.jamPulang : item.jamMasuk;
+        const actTipe = (item.jamPulang && item.jamPulang !== '-') 
+          ? (item.shift === 'Lembur' ? 'Selesai Lembur' : 'Pulang') 
+          : (item.shift === 'Lembur' ? 'Masuk Lembur' : item.tipeAbsen);
+        const actStatus = item.status || (item.shift === 'Lembur' ? (item.jamPulang !== '-' ? 'Lembur Selesai' : 'Sedang Lembur') : 'Tepat Waktu');
+
         div.innerHTML = `
           <div class="flex items-center gap-2.5">
             <img src="${item.fotoProfil}" onerror="imgFallback(this)" class="w-8 h-8 rounded-full object-cover bg-white border border-slate-200">
             <div>
               <strong class="text-xs font-bold text-slate-800 block">${item.nama}</strong>
-              <span class="text-[10px] text-slate-400">${item.jamMasuk || item.jamPulang} WITA \u2022 ${item.status} (${item.tipeAbsen})</span>
+              <span class="text-[10px] text-slate-400">${actTime} WITA \u2022 ${actStatus} (${actTipe})</span>
             </div>
           </div>
           <div class="flex items-center gap-1">
@@ -14071,9 +14107,29 @@ const appState = {
       let totalDur = 0, totalLem = 0, totalTun = 0;
 
       list.forEach(item => {
-        totalDur += item.durasiJam || 0;
-        totalLem += item.lemburJam || 0;
+        const isLemburItem = item.shift === 'Lembur' || String(item.tipeAbsen || '').includes('Lembur');
+        // Durasi HANYA untuk perhitungan jam kerja reguler saja; Lembur untuk perhitungan jam lembur saja
+        const rowDurasi = isLemburItem ? 0 : (item.durasiJam || 0);
+        const rowLembur = isLemburItem ? (item.lemburJam || item.durasiJam || 0) : (item.lemburJam || 0);
+
+        totalDur += rowDurasi;
+        totalLem += rowLembur;
         totalTun += item.tunjanganRp || 0;
+
+        const isLate = item.status === 'Terlambat';
+        const isLemburDone = item.status === 'Lembur Selesai' || (isLemburItem && item.jamPulang && item.jamPulang !== '-');
+        const isLemburRun = item.status === 'Sedang Lembur' && item.jamPulang === '-';
+        let statusBadgeClass = 'bg-emerald-100 text-emerald-700';
+        let statusText = item.status;
+        if (isLate) {
+          statusBadgeClass = 'bg-orange-100 text-orange-700';
+        } else if (isLemburDone) {
+          statusBadgeClass = 'bg-purple-100 text-purple-800';
+          statusText = 'Lembur Selesai';
+        } else if (isLemburRun) {
+          statusBadgeClass = 'bg-amber-100 text-amber-800 animate-pulse';
+          statusText = 'Sedang Lembur';
+        }
 
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-50 transition border-b border-slate-100';
@@ -14090,13 +14146,13 @@ const appState = {
           </td>
           <td class="py-3 px-3">
             <span class="font-semibold text-indigo-600 block">${item.tipeAbsen}</span>
-            <span class="text-[10px] font-bold ${item.shift === 'Malam' ? 'text-indigo-600' : 'text-amber-600'}">Shift ${item.shift || 'Siang'}</span>
+            <span class="text-[10px] font-bold ${item.shift === 'Malam' ? 'text-indigo-600' : (item.shift === 'Lembur' ? 'text-purple-600' : 'text-amber-600')}">Shift ${item.shift || 'Siang'}</span>
           </td>
           <td class="py-3 px-3 font-mono font-bold">${item.jamMasuk} - ${item.jamPulang}</td>
           <td class="py-3 px-3 text-slate-600">${item.siteName}</td>
-          <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${item.status === 'Terlambat' ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}">${item.status}</span></td>
-          <td class="py-3 px-3 font-bold text-indigo-700">${item.durasiJam} Jam</td>
-          <td class="py-3 px-3 font-bold text-orange-600">${item.lemburJam} Jam</td>
+          <td class="py-3 px-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${statusBadgeClass}">${statusText}</span></td>
+          <td class="py-3 px-3 font-bold text-indigo-700">${rowDurasi} Jam</td>
+          <td class="py-3 px-3 font-bold text-orange-600">${rowLembur} Jam</td>
           <td class="py-3 px-3 text-right font-extrabold text-emerald-700">${formatRupiah(item.tunjanganRp)}</td>
         `;
         tbody.appendChild(tr);
@@ -16388,15 +16444,36 @@ _Pesan resmi dari Sistem Absen Boss. Mohon konfirmasi verifikasi pada aplikasi._
 
     function monitoringRows() {
       const today = todayIso();
+      const yesterday = typeof getYesterdayWitaIso === 'function' ? getYesterdayWitaIso() : '';
       const recMap = {};
+
+      // 1. Rekaman presensi hari ini
       todayRecords().forEach(r => { recMap[r.idUser] = r; });
+
+      // 2. Jika belum ada rekaman hari ini, periksa sesi lembur / shift malam kemarin yang berjalan ke hari ini
+      (appState.attendanceToday || []).forEach(r => {
+        if (r.tanggal === yesterday && (r.shift === 'Lembur' || r.shift === 'Malam' || String(r.tipeAbsen || '').includes('Lembur'))) {
+          if (!recMap[r.idUser]) {
+            recMap[r.idUser] = r;
+          }
+        }
+      });
+
       const izinSet = {};
       appState.izinCuti.forEach(i => { if (i.status === 'Disetujui' && i.tglMulai <= today && today <= i.tglSelesai) izinSet[i.idUser] = true; });
       return appState.users.filter(x => x.role === 'Karyawan' && x.status.toLowerCase() === 'aktif').map(e => {
         const r = recMap[e.idUser];
         let st = 'BELUM';
-        if (r) st = r.jamPulang !== '-' ? 'PULANG' : (r.status === 'Terlambat' ? 'TERLAMBAT' : 'HADIR');
-        else if (izinSet[e.idUser]) st = 'IZIN';
+        if (r) {
+          const isLembur = r.shift === 'Lembur' || String(r.tipeAbsen || '').includes('Lembur');
+          if (isLembur) {
+            st = (r.jamPulang && r.jamPulang !== '-') ? 'SELESAI_LEMBUR' : 'LEMBUR';
+          } else {
+            st = r.jamPulang !== '-' ? 'PULANG' : (r.status === 'Terlambat' ? 'TERLAMBAT' : 'HADIR');
+          }
+        } else if (izinSet[e.idUser]) {
+          st = 'IZIN';
+        }
         return { e: e, r: r, st: st };
       });
     }
@@ -16404,6 +16481,8 @@ _Pesan resmi dari Sistem Absen Boss. Mohon konfirmasi verifikasi pada aplikasi._
     const MON_STYLE = {
       HADIR: ['Tepat Waktu', 'bg-emerald-100 text-emerald-700', '#10B981'], 
       TERLAMBAT: ['Terlambat', 'bg-orange-100 text-orange-700', '#F97316'],
+      LEMBUR: ['Sedang Lembur', 'bg-amber-100 text-amber-800', '#F59E0B'],
+      SELESAI_LEMBUR: ['Lembur Selesai', 'bg-purple-100 text-purple-800', '#8B5CF6'],
       PULANG: ['Sudah Pulang', 'bg-slate-200 text-slate-700', '#64748B'], 
       IZIN: ['Izin / Cuti', 'bg-blue-100 text-blue-700', '#3B82F6'],
       BELUM: ['Belum Absen', 'bg-rose-100 text-rose-700', '#F43F5E']
@@ -16445,19 +16524,28 @@ _Pesan resmi dari Sistem Absen Boss. Mohon konfirmasi verifikasi pada aplikasi._
           <span class="text-[11px] text-slate-400 mt-1 block">Radius ${s.radius} m \u2022 ${mine.length} karyawan</span></div>`;
       }).join('') || '<div class="text-xs text-slate-400 p-3">Belum ada site terdaftar.</div>';
 
-      const chips = [['ALL', 'Semua', total], ['HADIR', 'Hadir', rows.filter(x => x.st === 'HADIR' || x.st === 'PULANG').length], ['TERLAMBAT', 'Terlambat', cnt('TERLAMBAT')], ['BELUM', 'Belum Absen', belum], ['IZIN', 'Izin', izin]];
+      const lemburCount = rows.filter(x => x.st === 'LEMBUR' || x.st === 'SELESAI_LEMBUR').length;
+      const chips = [
+        ['ALL', 'Semua', total], 
+        ['HADIR', 'Hadir', rows.filter(x => x.st === 'HADIR' || x.st === 'PULANG' || x.st === 'LEMBUR' || x.st === 'SELESAI_LEMBUR').length], 
+        ['LEMBUR', 'Lembur', lemburCount],
+        ['TERLAMBAT', 'Terlambat', cnt('TERLAMBAT')], 
+        ['BELUM', 'Belum Absen', belum], 
+        ['IZIN', 'Izin', izin]
+      ];
       elById('monFilters').innerHTML = chips.map(c => `<button onclick="setMonitoringFilter('${c[0]}')" class="shrink-0 px-3.5 py-2 rounded-full text-xs font-bold border transition ${monitoringFilter === c[0] ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200'}">${c[1]} (${c[2]})</button>`).join('');
 
       let list = rows;
-      if (monitoringFilter === 'HADIR') list = rows.filter(x => x.st === 'HADIR' || x.st === 'PULANG');
+      if (monitoringFilter === 'HADIR') list = rows.filter(x => x.st === 'HADIR' || x.st === 'PULANG' || x.st === 'LEMBUR' || x.st === 'SELESAI_LEMBUR');
+      else if (monitoringFilter === 'LEMBUR') list = rows.filter(x => x.st === 'LEMBUR' || x.st === 'SELESAI_LEMBUR');
       else if (monitoringFilter !== 'ALL') list = rows.filter(x => x.st === monitoringFilter);
-      const order = { TERLAMBAT: 0, BELUM: 1, HADIR: 2, IZIN: 3, PULANG: 4 };
-      list = list.slice().sort((a, b) => order[a.st] - order[b.st]);
+      const order = { LEMBUR: 0, TERLAMBAT: 1, BELUM: 2, HADIR: 3, SELESAI_LEMBUR: 4, IZIN: 5, PULANG: 6 };
+      list = list.slice().sort((a, b) => (order[a.st] ?? 99) - (order[b.st] ?? 99));
       const site = id => (appState.sites.find(s => s.idSite === id) || { namaSite: '-' }).namaSite;
 
             elById('monList').innerHTML = list.map(x => {
         const m = MON_STYLE[x.st], e = x.e, r = x.r;
-        const times = r ? `Masuk ${r.jamMasuk} \u2022 Pulang ${r.jamPulang} \u2022 ${r.jarak} m` : lastSeenLabel(e.lastSeen);
+        const times = r ? `${r.shift === 'Lembur' ? 'Lembur' : 'Shift ' + (r.shift || 'Siang')}: Masuk ${r.jamMasuk} \u2022 Pulang ${r.jamPulang} \u2022 ${r.jarak} m` : lastSeenLabel(e.lastSeen);
         const geo = (e.lat != null && e.lng != null && String(e.lat).trim() !== '' && String(e.lng).trim() !== '') ? `<a href="https://www.google.com/maps?q=${e.lat},${e.lng}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 flex items-center justify-center transition active:scale-95 shadow-sm" title="Lihat Titik Lokasi GPS"><i class="fa-solid fa-location-dot"></i></a>` : '';
         
         // Cari foto selfie presensi (utamakan presensi hari ini, lalu riwayat presensi terbaru, atau lampiran izin)
