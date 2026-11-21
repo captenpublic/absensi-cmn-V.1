@@ -2556,8 +2556,8 @@
                         <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&amp;fit=crop&amp;w=300&amp;q=60" />
                         <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-[10px] font-bold text-white group-hover:bg-black/20">Kantor Modern</span>
                       </button>
-                      <button class="group relative rounded-xl overflow-hidden h-14 border border-slate-700 hover:border-emerald-400 transition" onclick="setQuickBgImage('https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&amp;fit=crop&amp;w=1200&amp;q=80')" type="button">
-                        <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&amp;fit=crop&amp;w=300&amp;q=60" />
+                      <button class="group relative rounded-xl overflow-hidden h-14 border border-slate-700 hover:border-emerald-400 transition" onclick="setQuickBgImage('https://images.unsplash.com/photo-1523848309072-c199db53f137?auto=format&amp;fit=crop&amp;w=1200&amp;q=80')" type="button">
+                        <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1523848309072-c199db53f137?auto=format&amp;fit=crop&amp;w=300&amp;q=60" />
                         <span class="absolute inset-0 bg-black/40 flex items-center justify-center text-[10px] font-bold text-white group-hover:bg-black/20">Proyek Tambang</span>
                       </button>
                       <button class="group relative rounded-xl overflow-hidden h-14 border border-slate-700 hover:border-emerald-400 transition" onclick="setQuickBgImage('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&amp;fit=crop&amp;w=1200&amp;q=80')" type="button">
@@ -5684,7 +5684,7 @@
   <div class="hidden p-8 bg-white text-slate-900" id="printArea" style="background-color: #ffffff !important; color: #0f172a !important;">
     <!-- KOP PERUSAHAAN RESMI (PT. CAHAYA MARHAN NAYA) -->
     <div class="mb-4 text-center">
-      <img alt="Kop Surat PT. CAHAYA MARHAN NAYA" class="w-full max-w-full h-auto object-contain mx-auto block" id="printCompanyKop" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhtZg4EESFFVtmPTVH_sQ774NULeApB-Ica0wm3n5YcuT4gvElY-JQ-k7JQG7AUWS2OFabkTtj65CjjvfrPuEzL-IPTxtnAxJqwSXhyphenhyphenvTlMGMwI1JX3lx6pXKRjb2L9UvdakuLPFRoVyMcDWO8BFeUzFeI98HAuJJS2ZqhAznBhI6Kz7SwgULW4BqU_VCU/s1600/image.png" />
+      <img alt="Kop Surat PT. CAHAYA MARHAN NAYA" class="w-full max-w-full h-auto object-contain mx-auto block" id="printCompanyKop" src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhV-wRaBFIbOP5sR18SV87LWZ-mS3O8Mf6rQDpwrRzngjSdwjwjXlMHjOe38SeYi9aq0JWZB5msqa_jTCb6gtsOeuRqrFyQ73AJ0hQpQXahkC-OqNtnXmO6WE42FpmCwWSy-8Y4v5wvPp1KPcv7CQZKMSTNyMnCw12L6M5SDmxm-r3w9GSnmxdjomV2CPk/s1600/image.png" />
     </div>
 
     <!-- SUB-HEADER LAPORAN RESMI PRESENSI -->
@@ -8022,6 +8022,9 @@
           const rawTheme = s.App_Theme_JSON || s.Theme_Config_JSON;
           const cloudTheme = typeof rawTheme === 'string' ? JSON.parse(rawTheme) : rawTheme;
           if (cloudTheme && typeof cloudTheme === 'object') {
+            if (cloudTheme.headerImageUrl && cloudTheme.headerImageUrl.includes('photo-1578328819058-b69f3a3b0f6b')) {
+              cloudTheme.headerImageUrl = DEFAULT_APP_THEME.headerImageUrl;
+            }
             localStorage.setItem('absenBossAppTheme', JSON.stringify(cloudTheme));
             applyAppTheme(cloudTheme);
           }
@@ -17727,7 +17730,7 @@ _Pesan resmi dari Sistem Absen Boss. Mohon konfirmasi verifikasi pada aplikasi._
       headerBgStart: '#1E1B4B',
       headerBgEnd: '#4338CA',
       headerBgSolid: '#1E1B4B',
-      headerImageUrl: 'https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=1200&q=80',
+      headerImageUrl: 'https://images.unsplash.com/photo-1523848309072-c199db53f137?auto=format&fit=crop&w=1200&q=80',
       headerOverlayOpacity: 60,
       headerBlur: 0,
       headerTitleAnim: 'shimmer',
@@ -17874,6 +17877,10 @@ _Pesan resmi dari Sistem Absen Boss. Mohon konfirmasi verifikasi pada aplikasi._
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed && typeof parsed === 'object') {
+            if (parsed.headerImageUrl && parsed.headerImageUrl.includes('photo-1578328819058-b69f3a3b0f6b')) {
+              parsed.headerImageUrl = DEFAULT_APP_THEME.headerImageUrl;
+              try { localStorage.setItem('absenBossAppTheme', JSON.stringify(parsed)); } catch (e) {}
+            }
             return Object.assign({}, DEFAULT_APP_THEME, parsed);
           }
         }
