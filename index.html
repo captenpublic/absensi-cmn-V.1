@@ -7174,6 +7174,28 @@
             }
           });
 
+          // Jika Selesai Lembur atau Pulang Shift Malam belum menemukan jam masuk hari ini, cari jam masuk kemarin (melewati tengah malam)
+          if (!jamMasukTercatat && (isLembur || shift === 'Malam') && (payload.tipeAbsen === 'Pulang' || payload.tipeAbsen === 'Selesai Lembur')) {
+            const yestIso = typeof getYesterdayWitaIso === 'function' ? getYesterdayWitaIso() : '';
+            if (yestIso) {
+              const qPresensiYest = query(
+                collection(fbDb, 'presensi'),
+                where('Tanggal', '==', yestIso),
+                where('ID_User', '==', resolvedUserId)
+              );
+              const snapYest = await getDocs(qPresensiYest);
+              snapYest.forEach(d => {
+                const row = d.data();
+                const rShift = String(row.Shift || 'Siang').trim();
+                const rTipe = String(row.Tipe_Absen || '').trim();
+                const targetMasuk = (payload.tipeAbsen === 'Selesai Lembur') ? 'Masuk Lembur' : 'Masuk';
+                if (rShift === shift && rTipe === targetMasuk) {
+                  jamMasukTercatat = String(row.Jam_WITA || '');
+                }
+              });
+            }
+          }
+
           if (sudahAda) {
             return {
               success: false,
@@ -7197,7 +7219,7 @@
             if (jamMasukTercatat) {
               const mMasuk = parseHmToMinutes(jamMasukTercatat);
               let mPulang = parseHmToMinutes(nowParts.hm24);
-              if (shift === 'Malam' && mPulang < mMasuk) mPulang += 24 * 60;
+              if ((shift === 'Malam' || isLembur) && mPulang < mMasuk) mPulang += 24 * 60;
               const selisih = mPulang - mMasuk;
               if (selisih > 0) {
                 durasiJam = parseFloat((selisih / 60).toFixed(1));
@@ -7828,11 +7850,11 @@
         const jabatanResmi = (u && u.jabatan) ? u.jabatan : esc(r.Jabatan);
         const fotoSelfiePresensi = safeUrl(r.Link_Foto_Selfie) || '';
 
-        // Jika Pulang pada Shift Malam, periksa apakah ada Masuk Shift Malam kemarin yang belum Pulang
-        if (tipe === 'Pulang' && shift === 'Malam' && !map[k]) {
+        // Jika Pulang pada Shift Malam atau Selesai Lembur, periksa apakah ada Masuk kemarin yang belum Pulang
+        if (((tipe === 'Pulang' && shift === 'Malam') || (tipe === 'Selesai Lembur' || shift === 'Lembur')) && !map[k]) {
           const yestDate = new Date(new Date(tgl + 'T12:00:00Z').getTime() - 86400000);
           const yestStr = yestDate.toISOString().substring(0, 10);
-          const yestKey = yestStr + '|' + id + '|Malam';
+          const yestKey = yestStr + '|' + id + '|' + shift;
           if (map[yestKey] && map[yestKey].jamMasuk !== '-' && map[yestKey].jamPulang === '-') {
             k = yestKey;
           }
@@ -15917,6 +15939,30 @@ _Pesan resmi dari Sistem Absen Boss. Mohon konfirmasi verifikasi pada aplikasi._
       const badge = document.getElementById('badgeStatusJamKerjaLembur');
       if (!badge) return;
 
+      const u = appState.currentUser;
+      const today = todayIso();
+      const yesterdayIso = typeof getYesterdayWitaIso === 'function' ? getYesterdayWitaIso() : '';
+
+      // Jika lembur saat ini sedang berjalan (aktif), tampilkan indikator aktif
+      let ongoingLembur = (appState.attendanceToday || []).find(a => 
+        u && a.idUser === u.idUser && a.tanggal === today && (a.shift === 'Lembur' || String(a.tipeAbsen || '').includes('Lembur')) && a.jamMasuk !== '-' && a.jamPulang === '-'
+      );
+      if (!ongoingLembur && u && yesterdayIso) {
+        ongoingLembur = (appState.attendanceToday || []).find(a => 
+          a.idUser === u.idUser && a.tanggal === yesterdayIso && (a.shift === 'Lembur' || String(a.tipeAbsen || '').includes('Lembur')) && a.jamMasuk !== '-' && a.jamPulang === '-'
+        );
+      }
+
+      if (ongoingLembur) {
+        badge.innerHTML = `
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs animate-pulse">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <i class="fa-solid fa-clock-rotate-left text-amber-600"></i> Tugas Lembur Sedang Berjalan (Mulai ${ongoingLembur.jamMasuk} WITA)
+          </span>
+        `;
+        return;
+      }
+
       const wita = getWitaDateParts();
       const check = isCurrentlyInWorkHours(wita.hm24, currentSelectedShift);
 
@@ -15947,9 +15993,22 @@ _Pesan resmi dari Sistem Absen Boss. Mohon konfirmasi verifikasi pada aplikasi._
       if (!u || u.role !== 'Karyawan') return;
 
       const today = todayIso();
-      const lemburRec = (appState.attendanceToday || []).find(a => 
+      const yesterdayIso = typeof getYesterdayWitaIso === 'function' ? getYesterdayWitaIso() : '';
+
+      // Cari lembur hari ini
+      let lemburRec = (appState.attendanceToday || []).find(a => 
         a.idUser === u.idUser && a.tanggal === today && (a.shift === 'Lembur' || String(a.tipeAbsen || '').includes('Lembur'))
       );
+
+      // Jika lembur hari ini belum ada, periksa apakah ada lembur kemarin yang belum diselesaikan (melewati tengah malam)
+      if (!lemburRec || (lemburRec.jamMasuk === '-' && lemburRec.jamPulang === '-')) {
+        const yestLembur = (appState.attendanceToday || []).find(a => 
+          a.idUser === u.idUser && a.tanggal === yesterdayIso && (a.shift === 'Lembur' || String(a.tipeAbsen || '').includes('Lembur')) && a.jamMasuk !== '-' && a.jamPulang === '-'
+        );
+        if (yestLembur) {
+          lemburRec = yestLembur;
+        }
+      }
 
       const btnMasuk = document.getElementById('btnActionMasukLembur');
       const btnPulang = document.getElementById('btnActionPulangLembur');
@@ -16483,7 +16542,17 @@ _Pesan resmi dari Sistem Absen Boss. Mohon konfirmasi verifikasi pada aplikasi._
       const badgeMob = elById('karyawanTodayStatusBadgeMob');
 
       if (currentSelectedShift === 'Lembur') {
-        const lemburRec = todayRecords().find(a => a.idUser === u.idUser && (a.shift === 'Lembur' || String(a.tipeAbsen || '').includes('Lembur')));
+        const today = todayIso();
+        const yesterdayIso = typeof getYesterdayWitaIso === 'function' ? getYesterdayWitaIso() : '';
+        let lemburRec = (appState.attendanceToday || []).find(a => 
+          a.idUser === u.idUser && a.tanggal === today && (a.shift === 'Lembur' || String(a.tipeAbsen || '').includes('Lembur'))
+        );
+        if (!lemburRec || (lemburRec.jamMasuk === '-' && lemburRec.jamPulang === '-')) {
+          const yestLembur = (appState.attendanceToday || []).find(a => 
+            a.idUser === u.idUser && a.tanggal === yesterdayIso && (a.shift === 'Lembur' || String(a.tipeAbsen || '').includes('Lembur')) && a.jamMasuk !== '-' && a.jamPulang === '-'
+          );
+          if (yestLembur) lemburRec = yestLembur;
+        }
         const lMasuk = !!lemburRec && lemburRec.jamMasuk !== '-', lPulang = !!lemburRec && lemburRec.jamPulang !== '-';
         const wita = getWitaDateParts();
         const workCheck = isCurrentlyInWorkHours(wita.hm24);
