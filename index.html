@@ -1,13 +1,69 @@
 <!DOCTYPE html>
-<!-- THUMBNAIL POSTINGAN BLOGGER (TERSEMBUNYI) -->
-<div style="display: none; height: 0; overflow: hidden;"><img alt="Absen Boss - Aplikasi Presensi Selfie &amp; Geofencing" height="450" src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&amp;fit=crop&amp;w=800&amp;q=80" width="800" /></div>
-
-
 <html lang="id">
 <head>
   <meta charset="UTF-8"></meta>
   <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"></meta>
   <title>Absen Boss - Aplikasi Presensi Selfie & Geofencing</title>
+
+  <!-- PWA MANIFEST & ICONS (GITHUB PAGES & STANDALONE COMPATIBLE) -->
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Absen Boss" />
+  <meta name="theme-color" content="#4338CA" />
+
+  <!-- PWA EARLY CAPTURE & SERVICE WORKER REGISTRATION (DIJALANKAN PALING AWAL DI HEAD) -->
+  <script>
+    window.pwaDeferredPrompt = null;
+    window.pwaIsInstalled = false;
+
+    try {
+      if (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.navigator.standalone === true ||
+        document.referrer.includes('android-app://')
+      ) {
+        window.pwaIsInstalled = true;
+      }
+    } catch (e) {}
+
+    // Tangkap event instalasi browser Chrome / Edge / Android sedini mungkin
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.pwaDeferredPrompt = e;
+      console.log('✅ PWA: beforeinstallprompt berhasil ditangkap di awal head!');
+      if (typeof window.showPwaInstallBanner === 'function') {
+        window.showPwaInstallBanner();
+      }
+    });
+
+    window.addEventListener('appinstalled', function () {
+      console.log('✅ PWA: Aplikasi Absen Boss berhasil diinstal');
+      window.pwaDeferredPrompt = null;
+      window.pwaIsInstalled = true;
+      if (typeof window.hidePwaInstallBanner === 'function') {
+        window.hidePwaInstallBanner();
+      }
+      var card = document.getElementById('loginPwaBannerCard');
+      if (card) card.classList.add('hidden');
+    });
+
+    // Daftarkan service worker langsung di awal
+    if ('serviceWorker' in navigator && (location.protocol.startsWith('http') || location.protocol.startsWith('https'))) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(function (reg) {
+          console.log('✅ PWA ServiceWorker aktif:', reg.scope);
+        })
+        .catch(function (err) {
+          console.log('PWA Note: Mode web biasa:', err.message);
+        });
+    }
+  </script>
 
   <!-- =================================================================== -->
   <!-- META TAGS STANDAR & SEO                                             -->
@@ -751,68 +807,13 @@
       animation: particle-drift 8s ease-in-out infinite;
     }
   </style>
-  <!-- PWA MANIFEST & ICONS (GITHUB PAGES & STANDALONE COMPATIBLE) -->
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
-  <link rel="apple-touch-icon" href="./icon-192.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Absen Boss" />
-  <meta name="theme-color" content="#4338CA" />
-
-  <!-- PWA EARLY CAPTURE & SERVICE WORKER REGISTRATION (DIJALANKAN PALING AWAL AGAR TIDAK KEHILANGAN EVENT BROWSER) -->
-  <script>
-    window.pwaDeferredPrompt = null;
-    window.pwaIsInstalled = false;
-
-    try {
-      if (
-        window.matchMedia('(display-mode: standalone)').matches ||
-        window.matchMedia('(display-mode: fullscreen)').matches ||
-        window.navigator.standalone === true ||
-        document.referrer.includes('android-app://')
-      ) {
-        window.pwaIsInstalled = true;
-      }
-    } catch (e) {}
-
-    // Tangkap event instalasi browser Chrome / Edge / Android sedini mungkin
-    window.addEventListener('beforeinstallprompt', function (e) {
-      e.preventDefault();
-      window.pwaDeferredPrompt = e;
-      console.log('✅ PWA: beforeinstallprompt berhasil ditangkap di awal!');
-      if (typeof window.showPwaInstallBanner === 'function') {
-        window.showPwaInstallBanner();
-      }
-    });
-
-    window.addEventListener('appinstalled', function () {
-      console.log('✅ PWA: Aplikasi Absen Boss berhasil diinstal');
-      window.pwaDeferredPrompt = null;
-      window.pwaIsInstalled = true;
-      if (typeof window.hidePwaInstallBanner === 'function') {
-        window.hidePwaInstallBanner();
-      }
-      var card = document.getElementById('loginPwaBannerCard');
-      if (card) card.classList.add('hidden');
-    });
-
-    // Daftarkan service worker langsung di awal
-    if ('serviceWorker' in navigator && (location.protocol.startsWith('http') || location.protocol.startsWith('https'))) {
-      navigator.serviceWorker.register('./sw.js')
-        .then(function (reg) {
-          console.log('✅ PWA ServiceWorker aktif:', reg.scope);
-        })
-        .catch(function (err) {
-          console.log('PWA Note: Mode web biasa:', err.message);
-        });
-    }
-  </script>
-
 </head>
 <body class="text-slate-800 antialiased selection:bg-indigo-500/20 selection:text-indigo-700">
 
 <div class="text-slate-800 antialiased selection:bg-indigo-500/20 selection:text-indigo-700 relative min-h-screen w-full" id="absenBossRoot">
+
+  <!-- THUMBNAIL POSTINGAN BLOGGER (TERSEMBUNYI) -->
+  <div style="display: none; height: 0; overflow: hidden;"><img alt="Absen Boss - Aplikasi Presensi Selfie &amp; Geofencing" height="450" src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&amp;fit=crop&amp;w=800&amp;q=80" width="800" /></div>
 
   <!-- TOAST NOTIFICATION & BACKDROP -->
   <div id="drawerBackdrop" onclick="toggleMobileDrawer(true)"></div>
@@ -940,9 +941,15 @@
           <p>Klik <strong>"Instal"</strong> pada jendela konfirmasi. Aplikasi Absen Boss akan langsung terbuka mandiri di desktop Anda!</p>
         </div>
       </div>
-      <button type="button" onclick="closePwaDesktopModal()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold text-xs active:scale-95 transition">
-        Saya Mengerti
-      </button>
+      <div class="pt-2 flex flex-col gap-2">
+        <button type="button" onclick="downloadDesktopShortcut()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs active:scale-95 transition flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 cursor-pointer">
+          <i class="fa-solid fa-arrow-down-to-bracket text-xs"></i>
+          <span>Buat Pintasan Desktop Sekarang (.url)</span>
+        </button>
+        <button type="button" onclick="closePwaDesktopModal()" class="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs active:scale-95 transition cursor-pointer">
+          Tutup
+        </button>
+      </div>
     </div>
   </div>
 
@@ -5940,7 +5947,7 @@
 
     // PASTE FIREBASE CONFIG ANDA DI SINI
     const firebaseConfig = {
-     apiKey: "AIzaSyCOMUwo_ZvkY2PDRsRmj9kxvRFIH1YIDDA",
+      apiKey: "AIzaSyCOMUwo_ZvkY2PDRsRmj9kxvRFIH1YIDDA",
   authDomain: "aplikasi-absen-capten-v1.firebaseapp.com",
   projectId: "aplikasi-absen-capten-v1",
   storageBucket: "aplikasi-absen-capten-v1.firebasestorage.app",
@@ -6088,6 +6095,28 @@
       const desktopModal = document.getElementById('pwaDesktopModal');
       if (desktopModal) desktopModal.classList.add('hidden');
     }
+
+    function downloadDesktopShortcut() {
+      try {
+        const currentUrl = window.location.href;
+        const shortcutContent = `[InternetShortcut]\r\nURL=${currentUrl}\r\nIconIndex=0\r\nIconFile=${new URL('favicon.ico', currentUrl).href}\r\n`;
+        const blob = new Blob([shortcutContent], { type: 'application/octet-stream' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Absen Boss.url';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        if (typeof showToast === 'function') {
+          showToast('Pintasan desktop berhasil dibuat dan diunduh! Tarik atau simpan ke Desktop komputer Anda.', 'success', 8000);
+        }
+        closePwaDesktopModal();
+      } catch (err) {
+        console.error('Gagal membuat pintasan:', err);
+      }
+    }
+
+    window.downloadDesktopShortcut = downloadDesktopShortcut;
 
     // Daftarkan ke window global agar dapat dipanggil atribut HTML onclick
     window.showPwaInstallBanner = showPwaInstallBanner;
