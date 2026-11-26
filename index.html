@@ -760,6 +760,55 @@
   <meta name="apple-mobile-web-app-title" content="Absen Boss" />
   <meta name="theme-color" content="#4338CA" />
 
+  <!-- PWA EARLY CAPTURE & SERVICE WORKER REGISTRATION (DIJALANKAN PALING AWAL AGAR TIDAK KEHILANGAN EVENT BROWSER) -->
+  <script>
+    window.pwaDeferredPrompt = null;
+    window.pwaIsInstalled = false;
+
+    try {
+      if (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.navigator.standalone === true ||
+        document.referrer.includes('android-app://')
+      ) {
+        window.pwaIsInstalled = true;
+      }
+    } catch (e) {}
+
+    // Tangkap event instalasi browser Chrome / Edge / Android sedini mungkin
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.pwaDeferredPrompt = e;
+      console.log('✅ PWA: beforeinstallprompt berhasil ditangkap di awal!');
+      if (typeof window.showPwaInstallBanner === 'function') {
+        window.showPwaInstallBanner();
+      }
+    });
+
+    window.addEventListener('appinstalled', function () {
+      console.log('✅ PWA: Aplikasi Absen Boss berhasil diinstal');
+      window.pwaDeferredPrompt = null;
+      window.pwaIsInstalled = true;
+      if (typeof window.hidePwaInstallBanner === 'function') {
+        window.hidePwaInstallBanner();
+      }
+      var card = document.getElementById('loginPwaBannerCard');
+      if (card) card.classList.add('hidden');
+    });
+
+    // Daftarkan service worker langsung di awal
+    if ('serviceWorker' in navigator && (location.protocol.startsWith('http') || location.protocol.startsWith('https'))) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(function (reg) {
+          console.log('✅ PWA ServiceWorker aktif:', reg.scope);
+        })
+        .catch(function (err) {
+          console.log('PWA Note: Mode web biasa:', err.message);
+        });
+    }
+  </script>
+
 </head>
 <body class="text-slate-800 antialiased selection:bg-indigo-500/20 selection:text-indigo-700">
 
@@ -860,6 +909,38 @@
         </div>
       </div>
       <button type="button" onclick="closePwaAndroidModal()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-extrabold text-xs active:scale-95 transition">
+        Saya Mengerti
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL PANDUAN INSTAL UNTUK PC / LAPTOP (DESKTOP) -->
+  <div id="pwaDesktopModal" class="hidden fixed inset-0 z-[130] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white rounded-3xl p-5 max-w-sm sm:max-w-md w-full shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-xs">
+            <i class="fa-solid fa-desktop"></i>
+          </div>
+          <h4 class="text-sm font-black text-slate-800">Cara Pasang di Komputer / Laptop (PC)</h4>
+        </div>
+        <button type="button" onclick="closePwaDesktopModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-2.5 text-xs text-slate-600">
+        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+          <p>Lihat <strong>bilah alamat (URL bar)</strong> di bagian atas browser Anda. Klik ikon <strong>Instal Aplikasi</strong> (<i class="fa-solid fa-download text-indigo-600"></i>) di sebelah kanan alamat web.</p>
+        </div>
+        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+          <p>Atau klik menu <strong>Titik Tiga (⋮)</strong> di pojok kanan atas browser &rarr; pilih <strong>"Instal Absen Boss..."</strong> (atau <em>Simpan & bagikan &rarr; Instal sebagai aplikasi</em>).</p>
+        </div>
+        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+          <p>Klik <strong>"Instal"</strong> pada jendela konfirmasi. Aplikasi Absen Boss akan langsung terbuka mandiri di desktop Anda!</p>
+        </div>
+      </div>
+      <button type="button" onclick="closePwaDesktopModal()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold text-xs active:scale-95 transition">
         Saya Mengerti
       </button>
     </div>
@@ -5859,7 +5940,7 @@
 
     // PASTE FIREBASE CONFIG ANDA DI SINI
     const firebaseConfig = {
-      apiKey: "AIzaSyCOMUwo_ZvkY2PDRsRmj9kxvRFIH1YIDDA",
+     apiKey: "AIzaSyCOMUwo_ZvkY2PDRsRmj9kxvRFIH1YIDDA",
   authDomain: "aplikasi-absen-capten-v1.firebaseapp.com",
   projectId: "aplikasi-absen-capten-v1",
   storageBucket: "aplikasi-absen-capten-v1.firebasestorage.app",
@@ -5905,12 +5986,12 @@
     // ============================================================================
     // PROGRESSIVE WEB APP (PWA) SERVICE WORKER & REKOMENDASI INSTAL APLIKASI
     // ============================================================================
-    let pwaDeferredPrompt = null;
     const PWA_DISMISS_KEY = 'absenBossPwaDismissed';
 
     function isRunningInStandalone() {
       try {
         return (
+          window.pwaIsInstalled === true ||
           window.matchMedia('(display-mode: standalone)').matches ||
           window.matchMedia('(display-mode: fullscreen)').matches ||
           window.navigator.standalone === true ||
@@ -5920,40 +6001,6 @@
         return false;
       }
     }
-
-    if ('serviceWorker' in navigator && (window.location.protocol.startsWith('http') || window.location.protocol.startsWith('https'))) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(reg => {
-            console.log('Absen Boss PWA ServiceWorker aktif:', reg.scope);
-          })
-          .catch(err => {
-            console.log('PWA Note: Menjalankan mode web biasa');
-          });
-      });
-    }
-
-    // Tangkap event sebelum instalasi browser (Chrome, Edge, Samsung Internet, Android)
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      pwaDeferredPrompt = e;
-      console.log('PWA: beforeinstallprompt tertangkap');
-
-      if (!isRunningInStandalone() && sessionStorage.getItem(PWA_DISMISS_KEY) !== 'true') {
-        showPwaInstallBanner();
-      }
-    });
-
-    // Deteksi jika aplikasi berhasil diinstal oleh pengguna
-    window.addEventListener('appinstalled', () => {
-      pwaDeferredPrompt = null;
-      hidePwaInstallBanner();
-      const loginPwaCard = document.getElementById('loginPwaBannerCard');
-      if (loginPwaCard) loginPwaCard.classList.add('hidden');
-      if (typeof showToast === 'function') {
-        showToast('Aplikasi Absen Boss berhasil dipasang di layar utama Anda!', 'success', 6000);
-      }
-    });
 
     function showPwaInstallBanner() {
       if (isRunningInStandalone()) return;
@@ -5981,38 +6028,48 @@
       }
     }
 
-    function triggerPwaInstall() {
-      const ua = (window.navigator.userAgent || '').toLowerCase();
-      const isIos = /iphone|ipad|ipod/.test(ua);
-
-      if (isIos) {
-        hidePwaInstallBanner();
-        const iosModal = document.getElementById('pwaIosModal');
-        if (iosModal) iosModal.classList.remove('hidden');
-        return;
+    async function triggerPwaInstall() {
+      // 1. Prioritaskan dialog instalasi asli (Native Install Prompt) Chrome / Edge / Android jika tersedia
+      const promptEvent = window.pwaDeferredPrompt;
+      if (promptEvent) {
+        try {
+          hidePwaInstallBanner();
+          promptEvent.prompt();
+          const choiceResult = await promptEvent.userChoice;
+          console.log('✅ PWA User Choice:', choiceResult.outcome);
+          if (choiceResult.outcome === 'accepted') {
+            window.pwaDeferredPrompt = null;
+            if (typeof showToast === 'function') {
+              showToast('Terima kasih! Aplikasi Absen Boss sedang dipasang di perangkat Anda.', 'success', 6000);
+            }
+          }
+          return;
+        } catch (err) {
+          console.warn('Gagal memanggil native install prompt:', err);
+        }
       }
 
-      if (pwaDeferredPrompt) {
-        pwaDeferredPrompt.prompt();
-        pwaDeferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('Pengguna menerima instalasi PWA Absen Boss');
-          } else {
-            console.log('Pengguna menolak instalasi PWA');
-          }
-          pwaDeferredPrompt = null;
-          hidePwaInstallBanner();
-        }).catch(() => {
-          hidePwaInstallBanner();
-        });
-      } else {
-        // Tampilkan modal panduan ramah untuk Android / Browser Umum / WhatsApp Browser
-        hidePwaInstallBanner();
+      // 2. Jika prompt otomatis belum tertangkap, tampilkan panduan sesuai perangkat yang sedang dipakai
+      hidePwaInstallBanner();
+      const ua = (window.navigator.userAgent || '').toLowerCase();
+      const isIos = /iphone|ipad|ipod/.test(ua);
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
+
+      if (isIos) {
+        // Panduan khusus iPhone / iPad (Safari)
+        const iosModal = document.getElementById('pwaIosModal');
+        if (iosModal) iosModal.classList.remove('hidden');
+      } else if (isMobile) {
+        // Panduan khusus HP Android / Browser Ponsel
         const androidModal = document.getElementById('pwaAndroidModal');
-        if (androidModal) {
-          androidModal.classList.remove('hidden');
+        if (androidModal) androidModal.classList.remove('hidden');
+      } else {
+        // Panduan khusus Laptop / Komputer PC (Desktop Chrome & Edge)
+        const desktopModal = document.getElementById('pwaDesktopModal');
+        if (desktopModal) {
+          desktopModal.classList.remove('hidden');
         } else if (typeof showToast === 'function') {
-          showToast('Untuk memasang: Ketuk menu Titik Tiga (⋮) di browser Anda lalu pilih "Tambahkan ke Layar Utama" / "Instal Aplikasi".', 'info', 7000);
+          showToast('Klik ikon Instal (🖥️ ➕) di bilah alamat browser atas untuk memasang aplikasi.', 'info', 7000);
         }
       }
     }
@@ -6027,13 +6084,19 @@
       if (androidModal) androidModal.classList.add('hidden');
     }
 
-    // Daftarkan ke window agar dapat dipanggil oleh atribut HTML onclick
+    function closePwaDesktopModal() {
+      const desktopModal = document.getElementById('pwaDesktopModal');
+      if (desktopModal) desktopModal.classList.add('hidden');
+    }
+
+    // Daftarkan ke window global agar dapat dipanggil atribut HTML onclick
     window.showPwaInstallBanner = showPwaInstallBanner;
     window.hidePwaInstallBanner = hidePwaInstallBanner;
     window.dismissPwaPrompt = dismissPwaPrompt;
     window.triggerPwaInstall = triggerPwaInstall;
     window.closePwaIosModal = closePwaIosModal;
     window.closePwaAndroidModal = closePwaAndroidModal;
+    window.closePwaDesktopModal = closePwaDesktopModal;
     window.isRunningInStandalone = isRunningInStandalone;
 
     // TAMPILKAN OTOMATIS SAAT TAUTAN DIBUKA DI BROWSER HP MAUPUN PC
