@@ -751,10 +751,12 @@
       animation: particle-drift 8s ease-in-out infinite;
     }
   </style>
-  <!-- PWA MANIFEST & ICONS (DATA URI SINGLE FILE EMBEDDED) -->
-  <link rel="manifest" href="data:application/manifest+json;utf-8,%7B%22name%22%3A%22Absen%20Boss%20-%20Aplikasi%20Presensi%20Selfie%20%26%20Geofencing%22%2C%22short_name%22%3A%22AbsenBoss%22%2C%22description%22%3A%22Sistem%20Presensi%20Digital%20Selfie%2C%20Geofencing%20Anti-Titip%20Absen%201%20HP%201%20Akun%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23EFF3F8%22%2C%22theme_color%22%3A%22%234338CA%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fimages.unsplash.com%2Fphoto-1521737604893-d14cc237f11d%3Fauto%3Dformat%26fit%3Dcrop%26w%3D192%26q%3D80%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fimages.unsplash.com%2Fphoto-1521737604893-d14cc237f11d%3Fauto%3Dformat%26fit%3Dcrop%26w%3D512%26q%3D80%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D" />
+  <!-- PWA MANIFEST & ICONS (GITHUB PAGES & STANDALONE COMPATIBLE) -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=192&q=80" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Absen Boss" />
   <meta name="theme-color" content="#4338CA" />
 
 </head>
@@ -765,6 +767,70 @@
   <!-- TOAST NOTIFICATION & BACKDROP -->
   <div id="drawerBackdrop" onclick="toggleMobileDrawer(true)"></div>
   <div class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none" id="toastContainer"></div>
+
+  <!-- BANNER REKOMENDASI INSTAL APLIKASI PWA (GITHUB / STANDALONE) -->
+  <div id="pwaInstallBanner" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-[120] bg-white/95 backdrop-blur-md rounded-2xl p-4 border border-indigo-200/80 shadow-2xl shadow-indigo-950/20 transition-all duration-300 transform translate-y-0 animate-in fade-in slide-in-from-bottom-5">
+    <div class="flex items-start gap-3.5">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-800 flex items-center justify-center text-white shrink-0 shadow-md shadow-indigo-600/30 overflow-hidden">
+        <i class="fa-solid fa-mobile-screen-button text-lg"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between gap-1">
+          <h4 class="text-xs font-black text-slate-800 tracking-tight flex items-center gap-1.5">
+            <span>Pasang Aplikasi Absen Boss</span>
+            <span class="inline-block px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-100 text-indigo-700">PWA</span>
+          </h4>
+          <button type="button" onclick="dismissPwaPrompt(false)" class="text-slate-400 hover:text-slate-600 p-1 -mr-1 -mt-1 transition" title="Tutup">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
+        </div>
+        <p class="text-[11px] text-slate-500 leading-snug mt-1">
+          Rekomendasi: Pasang di Layar Utama HP / PC untuk akses satu ketukan, kamera selfie lebih cepat, dan sinyal GPS akurat!
+        </p>
+        <div class="flex items-center gap-2 mt-3">
+          <button type="button" id="btnPwaInstallAction" onclick="triggerPwaInstall()" class="flex-1 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/25 transition">
+            <i class="fa-solid fa-download text-xs"></i>
+            <span>Instal Sekarang</span>
+          </button>
+          <button type="button" onclick="dismissPwaPrompt(true)" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs active:scale-95 transition">
+            Nanti Saja
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PANDUAN INSTAL UNTUK IPHONE (SAFARI IOS) -->
+  <div id="pwaIosModal" class="hidden fixed inset-0 z-[130] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-sm shadow-xs">
+            <i class="fa-brands fa-apple"></i>
+          </div>
+          <h4 class="text-sm font-black text-slate-800">Cara Pasang di iPhone (iOS)</h4>
+        </div>
+        <button type="button" onclick="closePwaIosModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="space-y-2.5 text-xs text-slate-600">
+        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+          <p>Buka tautan ini di browser <strong>Safari</strong> iPhone Anda.</p>
+        </div>
+        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+          <p>Ketuk tombol <strong>Bagikan / Share</strong> (<i class="fa-solid fa-arrow-up-from-bracket text-indigo-600"></i>) di menu bawah Safari.</p>
+        </div>
+        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+          <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+          <p>Gulir lalu pilih menu <strong>"Tambah ke Layar Utama" (Add to Home Screen ➕)</strong>.</p>
+        </div>
+      </div>
+      <button type="button" onclick="closePwaIosModal()" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold text-xs active:scale-95 transition">
+        Saya Mengerti
+      </button>
+    </div>
+  </div>
 
   <!-- INPUT FILE KAMERA NATIVE HP UNTUK PRESENSI -->
   <input accept="image/*" capture="user" class="hidden" id="cameraInput" onchange="handleSelfieCapture(event)" type="file" />
@@ -5740,13 +5806,13 @@
 
     // PASTE FIREBASE CONFIG ANDA DI SINI
     const firebaseConfig = {
-     apiKey: "AIzaSyCOMUwo_ZvkY2PDRsRmj9kxvRFIH1YIDDA",
-  authDomain: "aplikasi-absen-capten-v1.firebaseapp.com",
-  projectId: "aplikasi-absen-capten-v1",
-  storageBucket: "aplikasi-absen-capten-v1.firebasestorage.app",
-  messagingSenderId: "714829576506",
-  appId: "1:714829576506:web:b5793a76ef9935b3b6b803"
-    };
+     apiKey: "AIzaSyCcgzWIZP50CF1sfWxnv9s2xQM4TlGBLU8",
+  authDomain: "aplikasi-absen-boss-v1-capten.firebaseapp.com",
+  projectId: "aplikasi-absen-boss-v1-capten",
+  storageBucket: "aplikasi-absen-boss-v1-capten.firebasestorage.app",
+  messagingSenderId: "812673537224",
+  appId: "1:812673537224:web:257dc9a083a6e5223e01fd"
+};
 
     // ============================================================================
     // FIREBASE MODULAR SDK IMPORT & ENGINE INITIALIZATION
@@ -5784,24 +5850,118 @@
     }
 
     // ============================================================================
-    // PROGRESSIVE WEB APP (PWA) SERVICE WORKER VIA DYNAMIC BLOB
+    // PROGRESSIVE WEB APP (PWA) SERVICE WORKER & REKOMENDASI INSTAL APLIKASI
     // ============================================================================
-    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-      try {
-        const swScript = `
-          self.addEventListener('install', event => { self.skipWaiting(); });
-          self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
-          self.addEventListener('fetch', event => {
-            event.respondWith(
-              fetch(event.request).catch(() => caches.match(event.request))
-            );
-          });
-        `;
-        const blob = new Blob([swScript], { type: 'application/javascript' });
-        const swBlobUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swBlobUrl).catch(e => console.log('SW Note:', e.message));
-      } catch (err) {}
+    let pwaDeferredPrompt = null;
+    const PWA_DISMISS_KEY = 'absenBossPwaDismissed';
+
+    function isRunningInStandalone() {
+      return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true ||
+        document.referrer.includes('android-app://')
+      );
     }
+
+    if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        // Daftarkan sw.js (standar GitHub Pages / Web Hosting)
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => {
+            console.log('Absen Boss PWA ServiceWorker aktif:', reg.scope);
+          })
+          .catch(err => {
+            console.log('PWA Note: Menjalankan mode web biasa');
+          });
+      });
+    }
+
+    // Tangkap event sebelum instalasi browser (Chrome, Edge, Samsung Internet, Android)
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      pwaDeferredPrompt = e;
+
+      // Jangan tampilkan jika sudah diinstal / mode standalone atau memilih "Nanti Saja" pada sesi ini
+      if (isRunningInStandalone()) return;
+      if (sessionStorage.getItem(PWA_DISMISS_KEY) === 'true') return;
+
+      showPwaInstallBanner();
+    });
+
+    // Deteksi jika aplikasi berhasil diinstal oleh pengguna
+    window.addEventListener('appinstalled', () => {
+      pwaDeferredPrompt = null;
+      hidePwaInstallBanner();
+      if (typeof showToast === 'function') {
+        showToast('Aplikasi Absen Boss berhasil dipasang di layar utama Anda!', 'success', 6000);
+      }
+    });
+
+    function showPwaInstallBanner() {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner && !isRunningInStandalone()) {
+        banner.classList.remove('hidden');
+      }
+    }
+
+    function hidePwaInstallBanner() {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function dismissPwaPrompt(rememberSession = false) {
+      hidePwaInstallBanner();
+      if (rememberSession) {
+        sessionStorage.setItem(PWA_DISMISS_KEY, 'true');
+      }
+    }
+
+    function triggerPwaInstall() {
+      const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+
+      if (isIos) {
+        hidePwaInstallBanner();
+        const iosModal = document.getElementById('pwaIosModal');
+        if (iosModal) iosModal.classList.remove('hidden');
+        return;
+      }
+
+      if (pwaDeferredPrompt) {
+        pwaDeferredPrompt.prompt();
+        pwaDeferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('Pengguna menerima instalasi PWA Absen Boss');
+          } else {
+            console.log('Pengguna menolak instalasi PWA');
+          }
+          pwaDeferredPrompt = null;
+          hidePwaInstallBanner();
+        });
+      } else {
+        // Jika browser belum memicu event sebelum tombol ditekan
+        if (typeof showToast === 'function') {
+          showToast('Untuk memasang: Ketuk menu Titik Tiga (⋮) di browser Anda lalu pilih "Tambahkan ke Layar Utama" / "Instal Aplikasi".', 'info', 7000);
+        }
+        hidePwaInstallBanner();
+      }
+    }
+
+    function closePwaIosModal() {
+      const iosModal = document.getElementById('pwaIosModal');
+      if (iosModal) iosModal.classList.add('hidden');
+    }
+
+    // Untuk pengguna iOS Safari, tampilkan banner rekomendasi saat pertama kali buka
+    document.addEventListener('DOMContentLoaded', () => {
+      const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+      if (isIos && !isRunningInStandalone() && sessionStorage.getItem(PWA_DISMISS_KEY) !== 'true') {
+        setTimeout(() => {
+          showPwaInstallBanner();
+        }, 2000);
+      }
+    });
 
     // ============================================================================
 
