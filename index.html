@@ -891,27 +891,53 @@
           <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm shadow-xs">
             <i class="fa-brands fa-android"></i>
           </div>
-          <h4 class="text-sm font-black text-slate-800">Cara Pasang di HP Android</h4>
+          <h4 class="text-sm font-black text-slate-800">Pasang Pintasan di HP Android</h4>
         </div>
         <button type="button" onclick="closePwaAndroidModal()" class="text-slate-400 hover:text-slate-600 p-1"><i class="fa-solid fa-xmark"></i></button>
       </div>
+
       <div class="space-y-2.5 text-xs text-slate-600">
-        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-          <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
-          <p>Jika membuka tautan dari <strong>WhatsApp / Chat</strong>: Ketuk menu <strong>Titik Tiga (⋮)</strong> di pojok kanan atas, lalu pilih <strong>"Buka di Chrome"</strong> (Open in Chrome).</p>
+        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100">
+          <span class="w-5 h-5 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+          <p class="text-slate-700">Ketuk menu <strong>Titik Tiga (⋮)</strong> di <strong>pojok kanan atas layar HP</strong> Anda.</p>
         </div>
         <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-          <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
-          <p>Di browser Chrome, ketuk menu <strong>Titik Tiga (⋮)</strong> di pojok kanan atas layar.</p>
-        </div>
-        <div class="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-          <span class="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
-          <p>Pilih menu <strong>"Tambahkan ke Layar Utama" (Add to Home screen)</strong> atau <strong>"Instal Aplikasi"</strong>.</p>
+          <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+          <p class="text-slate-700">Pilih menu <strong>"Tambahkan ke Layar Utama" (Add to Home screen)</strong> atau <strong>"Instal Aplikasi"</strong>.</p>
         </div>
       </div>
-      <button type="button" onclick="closePwaAndroidModal()" class="w-full py-2.5 rounded-xl bg-emerald-600 text-white font-extrabold text-xs active:scale-95 transition">
-        Saya Mengerti
-      </button>
+
+      <div class="pt-1 flex flex-col gap-2">
+        <!-- TOMBOL AKSI 1: LANGSUNG BUKA KE CHROME & ARAHKAN PINTASAN -->
+        <button type="button" onclick="openInChromeBrowser()" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white font-black text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 transition cursor-pointer">
+          <i class="fa-brands fa-chrome text-sm"></i>
+          <span>Buka di Chrome & Tambah Pintasan</span>
+        </button>
+
+        <!-- TOMBOL AKSI 2: AKTIFKAN PENUNJUK ANIMASI KE MENU TITIK TIGA -->
+        <button type="button" onclick="activateChromeMenuGuide()" class="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer">
+          <i class="fa-solid fa-arrow-up-right-from-square text-xs text-emerald-600"></i>
+          <span>Tunjukkan Posisi Menu Titik Tiga (⋮)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERLAY PENUNJUK VISUAL MENU TITIK TIGA CHROME (ANDROID) -->
+  <div id="chromeMenuGuideOverlay" class="hidden fixed inset-0 z-[150] pointer-events-none transition-opacity duration-300">
+    <div class="absolute top-3 right-3 flex flex-col items-end animate-bounce pointer-events-auto">
+      <div class="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-emerald-600 text-white text-xs font-black shadow-2xl border-2 border-white">
+        <span>Ketuk Menu (⋮) di Sini</span>
+        <i class="fa-solid fa-arrow-up-right-from-square text-sm"></i>
+      </div>
+      <div class="w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-b-8 border-b-emerald-600 -mr-1"></div>
+    </div>
+    <div class="absolute top-20 right-4 left-4 max-w-sm mx-auto p-3.5 rounded-2xl bg-slate-900/95 backdrop-blur-md text-white text-xs text-center border border-emerald-500/40 shadow-2xl pointer-events-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 text-left">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base shrink-0"></i>
+        <span>Lalu pilih <strong>"Tambahkan ke Layar Utama"</strong> atau <strong>"Instal Aplikasi"</strong></span>
+      </div>
+      <button type="button" onclick="document.getElementById('chromeMenuGuideOverlay').classList.add('hidden')" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 active:scale-95 rounded-lg text-[10px] font-bold shrink-0 text-white">Tutup</button>
     </div>
   </div>
 
@@ -5947,7 +5973,7 @@
 
     // PASTE FIREBASE CONFIG ANDA DI SINI
     const firebaseConfig = {
-      apiKey: "AIzaSyCOMUwo_ZvkY2PDRsRmj9kxvRFIH1YIDDA",
+     apiKey: "AIzaSyCOMUwo_ZvkY2PDRsRmj9kxvRFIH1YIDDA",
   authDomain: "aplikasi-absen-capten-v1.firebaseapp.com",
   projectId: "aplikasi-absen-capten-v1",
   storageBucket: "aplikasi-absen-capten-v1.firebasestorage.app",
@@ -6047,7 +6073,7 @@
           if (choiceResult.outcome === 'accepted') {
             window.pwaDeferredPrompt = null;
             if (typeof showToast === 'function') {
-              showToast('Terima kasih! Aplikasi Absen Boss sedang dipasang di perangkat Anda.', 'success', 6000);
+              showToast('Terima kasih! Aplikasi Absen Boss sedang dipasang di layar utama.', 'success', 6000);
             }
           }
           return;
@@ -6056,20 +6082,26 @@
         }
       }
 
-      // 2. Jika prompt otomatis belum tertangkap, tampilkan panduan sesuai perangkat yang sedang dipakai
+      // 2. Jika prompt otomatis belum tertangkap, deteksi lingkungan perangkat
       hidePwaInstallBanner();
       const ua = (window.navigator.userAgent || '').toLowerCase();
       const isIos = /iphone|ipad|ipod/.test(ua);
       const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
+      const isWebView = /wv|whatsapp|fb_iab|fbav|instagram|messenger|line/i.test(ua);
 
       if (isIos) {
         // Panduan khusus iPhone / iPad (Safari)
         const iosModal = document.getElementById('pwaIosModal');
         if (iosModal) iosModal.classList.remove('hidden');
       } else if (isMobile) {
-        // Panduan khusus HP Android / Browser Ponsel
-        const androidModal = document.getElementById('pwaAndroidModal');
-        if (androidModal) androidModal.classList.remove('hidden');
+        // Jika membuka dari dalam WhatsApp / chat in-app browser, langsung arahkan buka di Google Chrome!
+        if (isWebView) {
+          openInChromeBrowser();
+        } else {
+          // Jika sudah di Chrome biasa, tampilkan panduan interaktif dengan opsi buka & pointer visual
+          const androidModal = document.getElementById('pwaAndroidModal');
+          if (androidModal) androidModal.classList.remove('hidden');
+        }
       } else {
         // Panduan khusus Laptop / Komputer PC (Desktop Chrome & Edge)
         const desktopModal = document.getElementById('pwaDesktopModal');
@@ -6078,6 +6110,41 @@
         } else if (typeof showToast === 'function') {
           showToast('Klik ikon Instal (🖥️ ➕) di bilah alamat browser atas untuk memasang aplikasi.', 'info', 7000);
         }
+      }
+    }
+
+    function openInChromeBrowser() {
+      const currentUrl = window.location.href;
+      const cleanUrl = currentUrl.replace(/^https?:\/\//i, '');
+      const scheme = window.location.protocol.replace(':', '');
+      
+      if (typeof showToast === 'function') {
+        showToast('Mengarahkan langsung ke Google Chrome untuk membuat pintasan...', 'info', 4000);
+      }
+      
+      // Intent resmi sistem Android untuk membuka tautan langsung di aplikasi Google Chrome
+      const chromeIntent = `intent://${cleanUrl}#Intent;scheme=${scheme};package=com.android.chrome;end`;
+      
+      try {
+        window.location.href = chromeIntent;
+      } catch (e) {
+        window.open(currentUrl, '_blank');
+      }
+
+      setTimeout(() => {
+        closePwaAndroidModal();
+        activateChromeMenuGuide();
+      }, 1500);
+    }
+
+    function activateChromeMenuGuide() {
+      closePwaAndroidModal();
+      const overlay = document.getElementById('chromeMenuGuideOverlay');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        setTimeout(() => {
+          overlay.classList.add('hidden');
+        }, 12000);
       }
     }
 
@@ -6126,6 +6193,8 @@
     window.closePwaIosModal = closePwaIosModal;
     window.closePwaAndroidModal = closePwaAndroidModal;
     window.closePwaDesktopModal = closePwaDesktopModal;
+    window.openInChromeBrowser = openInChromeBrowser;
+    window.activateChromeMenuGuide = activateChromeMenuGuide;
     window.isRunningInStandalone = isRunningInStandalone;
 
     // TAMPILKAN OTOMATIS SAAT TAUTAN DIBUKA DI BROWSER HP MAUPUN PC
